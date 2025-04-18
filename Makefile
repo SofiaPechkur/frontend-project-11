@@ -2,12 +2,10 @@ install:
 		npm ci
 lint:
 		npx eslint .
-link:
-		sudo npm link
 fix:
 		npx eslint --fix .
-test:
-    npm test
-test-coverage:
-    npm test -- --coverage
-. PHONY: test
+packlocal:
+		npx webpack serve
+build:
+		NODE_ENV=production npx webpack
+.PHONY: test
