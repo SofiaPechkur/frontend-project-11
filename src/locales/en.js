@@ -1,6 +1,19 @@
 export default {
-    translation: {
-      pDanger: '',
-      pSuccess: '',
-    },
-  };
+  translation: {
+    fullArticle: '',
+    btnClose: '',
+
+    titleH1: '',
+    afterTitleLead: '',
+
+    labelUrlInput: '',
+
+    btnSubmit: '',
+
+    feedbackDanger: '',
+    feedbackSuccess: '',
+
+    footer: '',
+    footerLink: '',
+  },
+};
