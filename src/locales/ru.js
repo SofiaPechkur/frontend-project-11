@@ -12,6 +12,12 @@ export default {
 
     feedbackDanger: 'Ссылка должна быть валидным URL',
     feedbackSuccess: 'RSS успешно загружен',
+    feedbackParseErr: 'Ресурс не содержит валидный RSS',
+    feedbackNetworkErr: 'Ошибка сети',
+
+    h2FeedsCardTitle: 'Фиды',
+    h2PostsCardTitle: 'Посты',
+    btnPost: 'Просмотр',
 
     footer: 'created by',
     footerTextLink: 'Hexlet',
