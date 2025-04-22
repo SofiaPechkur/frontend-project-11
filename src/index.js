@@ -21,13 +21,13 @@ const runApp = () => {
   const posts = document.querySelector('.posts');
 
   const state = {
-    urls: [], // https://lorem-rss.hexlet.app/feed, https://lorem-rss.hexlet.app/feed?unit=day
+    urls: [], // https://lorem-rss.hexlet.app/feed?unit=second, https://lorem-rss.hexlet.app/feed?unit=second&interval=30
     status: '',
     data: {
-      // {id: 1, title: title, description: description}
+      // {title: title, description: description}
       feeds: [],
-      // {feedId: 1, postId: 1, postTitle: title, postLink: link},
-      // {feedId: 1, postId: 2, postTitle: title, postLink: link},
+      // {postId: 1, postTitle: title, postLink: link},
+      // {postId: 2, postTitle: title, postLink: link},
       posts: [],
     },
   };
@@ -134,13 +134,14 @@ const runApp = () => {
 
   const watchedState = onChange(state, render);
 
-  const getContents = (url) => axios.get(`https://allorigins.hexlet.app/get?url=${encodeURIComponent(url)}`)
+  const getContents = (url) => axios.get(`https://allorigins.hexlet.app/get?disableCache=true&url=${encodeURIComponent(url)}`)
     .then((response) => {
       const parser = new DOMParser();
       const contentDoc = parser.parseFromString(response.data.contents, 'application/xml');
       return contentDoc;
     });
-  // https://lorem-rss.hexlet.app/feed
+
+  // https://lorem-rss.hexlet.app/feed?unit=second, https://lorem-rss.hexlet.app/feed?unit=second&interval=30
   const form = document.querySelector('form');
   form.addEventListener('submit', (event) => {
     event.preventDefault();
@@ -148,23 +149,55 @@ const runApp = () => {
       .then(() => {
         getContents(input.value)
           .then((contentDoc) => {
-            const title = contentDoc.querySelector('title').textContent;
-            const description = contentDoc.querySelector('description').textContent;
-            const items = Array.from(contentDoc.querySelectorAll('item'));
-            const itemsData = items.map((item) => {
-              const titleText = item.querySelector('title').textContent;
-              const linkText = item.querySelector('link').textContent;
-              return [titleText, linkText];
-            });
-            watchedState.data.feeds.push({ id: state.data.feeds.length + 1, title, description });
-            itemsData.forEach((item) => {
-              watchedState.data.posts.push({
-                feedId: state.data.feeds.at(-1).id,
-                postId: state.data.posts.length + 1,
-                postTitle: item[0],
-                postLink: item[1],
+            const changeState = (doc) => {
+              const title = doc.querySelector('title').textContent;
+              const description = doc.querySelector('description').textContent;
+              const items = Array.from(doc.querySelectorAll('item'));
+              const itemsData = items.map((item) => {
+                const titleText = item.querySelector('title').textContent;
+                const linkText = item.querySelector('link').textContent;
+                return [titleText, linkText];
               });
-            });
+              if (state.data.feeds.length === 0) {
+                watchedState.data.feeds.push({ title, description });
+              }
+              const feedsTitles = state.data.feeds.map((feed) => feed.title);
+              if (!feedsTitles.includes(title)) {
+                watchedState.data.feeds.push({ title, description });
+              }
+              if (state.data.posts.length === 0) {
+                itemsData.forEach((item) => {
+                  watchedState.data.posts.push({
+                    postId: state.data.posts.length + 1,
+                    postTitle: item[0],
+                    postLink: item[1],
+                  });
+                });
+              }
+              const postsTitles = state.data.posts.map((post) => post.postTitle);
+              itemsData.reverse().forEach((item) => {
+                if (!postsTitles.includes(item[0])) {
+                  watchedState.data.posts.unshift({
+                    postId: state.data.posts.length + 1,
+                    postTitle: item[0],
+                    postLink: item[1],
+                  });
+                }
+              });
+            };
+            changeState(contentDoc);
+            
+            const updateRSS = () => {
+              state.urls.forEach((url) => {
+                getContents(url)
+                  .then((newContentDoc) => {
+                    changeState(newContentDoc);
+                  });
+              });
+              setTimeout(updateRSS, 5000);
+            };
+            updateRSS();
+
             watchedState.urls.push(input.value);
             watchedState.status = 'success';
           })
