@@ -21,14 +21,16 @@ const runApp = () => {
   const posts = document.querySelector('.posts');
 
   const state = {
-    urls: [], // https://lorem-rss.hexlet.app/feed?unit=second, https://lorem-rss.hexlet.app/feed?unit=second&interval=30
+    urls: [], // https://lorem-rss.hexlet.app/feed?unit=second, https://lorem-rss.hexlet.app/feed?unit=second&interval=30, https://lorem-rss.hexlet.app/feed?unit=day
     status: '',
     data: {
       // {title: title, description: description}
       feeds: [],
-      // {postId: 1, postTitle: title, postLink: link},
-      // {postId: 2, postTitle: title, postLink: link},
+      // {postId: 1, postOpen: '', postTitle: title, postDescription: description, postLink: link},
+      // {postId: 2, postOpen: '', postTitle: title, postDescription: description, postLink: link},
       posts: [],
+      // activePost: postId,
+      activePost: 0,
     },
   };
 
@@ -97,11 +99,33 @@ const runApp = () => {
       });
     };
     renderPosts(stateData.posts);
+
+    const renderModalWindow = (postsArr) => {
+      postsArr.forEach((post) => {
+        if (post.postId === state.data.activePost) {
+          document.querySelector('.modal-title').textContent = post.postTitle;
+          document.querySelector('.modal-body').textContent = post.postDescription;
+        }
+      });
+    };
+    renderModalWindow(stateData.posts);
+
+    const renderOpenPosts = (postsArr) => {
+      const postsOpen = postsArr.filter((post) => post.postOpen === 'yes');
+      postsOpen.forEach((post) => {
+        const postTitle = document.querySelector(`a[data-id="${post.postId}"]`);
+        postTitle.classList.remove('fw-bold');
+        postTitle.classList.add('fw-normal', 'link-secondary');
+      });
+    };
+    renderOpenPosts(stateData.posts);
   };
 
   const render = () => {
     feeds.innerHTML = '';
     posts.innerHTML = '';
+    document.querySelector('.modal-title').textContent = '';
+    document.querySelector('.modal-body').textContent = '';
     input.classList.remove('is-invalid');
     feedback.classList.remove('text-success');
     feedback.classList.remove('text-danger');
@@ -110,10 +134,12 @@ const runApp = () => {
       case 'parseErr':
         feedback.classList.add('text-danger');
         feedback.textContent = i18n.t('feedbackParseErr');
+        renderData(state.data);
         break;
       case 'Network Error':
         feedback.classList.add('text-danger');
         feedback.textContent = i18n.t('feedbackNetworkErr');
+        renderData(state.data);
         break;
       case 'success':
         feedback.classList.add('text-success');
@@ -126,6 +152,7 @@ const runApp = () => {
         input.classList.add('is-invalid');
         feedback.classList.add('text-danger');
         feedback.textContent = i18n.t('feedbackDanger');
+        renderData(state.data);
         break;
       default:
         break;
@@ -141,7 +168,6 @@ const runApp = () => {
       return contentDoc;
     });
 
-  // https://lorem-rss.hexlet.app/feed?unit=second, https://lorem-rss.hexlet.app/feed?unit=second&interval=30
   const form = document.querySelector('form');
   form.addEventListener('submit', (event) => {
     event.preventDefault();
@@ -155,8 +181,9 @@ const runApp = () => {
               const items = Array.from(doc.querySelectorAll('item'));
               const itemsData = items.map((item) => {
                 const titleText = item.querySelector('title').textContent;
+                const descriptionText = item.querySelector('description').textContent;
                 const linkText = item.querySelector('link').textContent;
-                return [titleText, linkText];
+                return [titleText, descriptionText, linkText];
               });
               if (state.data.feeds.length === 0) {
                 watchedState.data.feeds.push({ title, description });
@@ -166,12 +193,16 @@ const runApp = () => {
                 watchedState.data.feeds.push({ title, description });
               }
               if (state.data.posts.length === 0) {
+                let i = 10;
                 itemsData.forEach((item) => {
                   watchedState.data.posts.push({
-                    postId: state.data.posts.length + 1,
+                    postId: i,
+                    postOpen: '',
                     postTitle: item[0],
-                    postLink: item[1],
+                    postDescription: item[1],
+                    postLink: item[2],
                   });
+                  i -= 1;
                 });
               }
               const postsTitles = state.data.posts.map((post) => post.postTitle);
@@ -179,14 +210,16 @@ const runApp = () => {
                 if (!postsTitles.includes(item[0])) {
                   watchedState.data.posts.unshift({
                     postId: state.data.posts.length + 1,
+                    postOpen: '',
                     postTitle: item[0],
-                    postLink: item[1],
+                    postDescription: item[1],
+                    postLink: item[2],
                   });
                 }
               });
             };
             changeState(contentDoc);
-            
+
             const updateRSS = () => {
               state.urls.forEach((url) => {
                 getContents(url)
@@ -212,6 +245,15 @@ const runApp = () => {
       .catch(() => {
         watchedState.status = 'failed';
       });
+  });
+
+  posts.addEventListener('click', (event) => {
+    const { target } = event;
+    const targetId = target.getAttribute('data-id');
+    watchedState.data.activePost = Number(targetId);
+    const targetPost = state.data.posts.find((post) => post.postId === Number(targetId));
+    const index = state.data.posts.indexOf(targetPost);
+    watchedState.data.posts[index].postOpen = 'yes';
   });
 
   render();
