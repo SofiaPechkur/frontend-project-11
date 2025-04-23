@@ -14,6 +14,7 @@ export default {
     feedbackSuccess: 'RSS успешно загружен',
     feedbackParseErr: 'Ресурс не содержит валидный RSS',
     feedbackNetworkErr: 'Ошибка сети',
+    feedbackRssNotUnique: 'RSS уже существует',
 
     h2FeedsCardTitle: 'Фиды',
     h2PostsCardTitle: 'Посты',
