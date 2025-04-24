@@ -24,7 +24,7 @@ export default (state, i18n) => {
   };
   firstRender();
 
-  const renderData = (stateData) => {
+  const renderData = () => {
     const renderFeeds = (feedsArr) => {
       const divCard = document.createElement('div');
       divCard.classList.add('card', 'border-0');
@@ -44,7 +44,8 @@ export default (state, i18n) => {
         li.classList.add('list-group-item', 'border-0', 'border-end-0');
         li.innerHTML = `
                 <h3 class="h6 m-0">${feed.title}</h3>
-                <p class="m-0 small text-black-50">${feed.description}</p>`;
+                <p class="m-0 small text-black-50"></p>`;
+        li.querySelector('p').textContent = feed.description;
         ul.appendChild(li);
       });
     };
@@ -67,36 +68,48 @@ export default (state, i18n) => {
         const li = document.createElement('li');
         li.classList.add('list-group-item', 'd-flex', 'justify-content-between', 'align-items-start', 'border-0', 'border-end-0');
         li.innerHTML = `
-                <a href="${post.postLink}" class="fw-bold" target="_blank" data-id="${post.postId}" rel="noopener noreferrer">${post.postTitle}</a>
+                <a href="" class="fw-bold" target="_blank" data-id="${post.postId}" rel="noopener noreferrer"></a>
                 <button type="button" class="btn btn-outline-primary btn-sm" data-id="${post.postId}" data-bs-toggle="modal" data-bs-target="#modal">${i18n.t('btnPost')}</button>`;
+        li.querySelector('a').setAttribute('href', post.postLink);
+        li.querySelector('a').textContent = post.postTitle;
         ul.appendChild(li);
       });
     };
 
-    if (stateData.feeds.length > 0) {
-      renderFeeds(stateData.feeds);
-      renderPosts(stateData.posts);
+    if (state.data.feeds.length > 0) {
+      renderFeeds(state.data.feeds);
+      renderPosts(state.data.posts);
     }
 
     const renderModalWindow = (postsArr) => {
       postsArr.forEach((post) => {
-        if (post.postId === state.data.activePost) {
+        if (post.postId === state.uiState.activePost) {
           document.querySelector('.modal-title').textContent = post.postTitle;
           document.querySelector('.modal-body').textContent = post.postDescription;
         }
       });
     };
-    renderModalWindow(stateData.posts);
+    renderModalWindow(state.data.posts);
 
-    const renderOpenPosts = (postsArr) => {
-      const postsOpen = postsArr.filter((post) => post.postOpen === 'yes');
-      postsOpen.forEach((post) => {
-        const postTitle = document.querySelector(`a[data-id="${post.postId}"]`);
+    const renderOpenPosts = () => {
+      const postsOpenId = state
+        .uiState.posts.filter((post) => post.visibility === 'visited')
+        .map((post) => post.postId);
+      postsOpenId.forEach((id) => {
+        const postTitle = document.querySelector(`a[data-id="${id}"]`);
         postTitle.classList.remove('fw-bold');
         postTitle.classList.add('fw-normal', 'link-secondary');
       });
     };
-    renderOpenPosts(stateData.posts);
+    renderOpenPosts();
+  };
+
+  const renderBtn = () => {
+    if (state.statusApp === 'request') {
+      btnSubmit.disabled = true;
+    } else {
+      btnSubmit.disabled = false;
+    }
   };
 
   const render = () => {
@@ -108,38 +121,35 @@ export default (state, i18n) => {
     feedback.classList.remove('text-success');
     feedback.classList.remove('text-danger');
     feedback.textContent = '';
-    switch (state.status) {
+    renderBtn();
+    switch (state.typeError) {
       case 'parseErr':
         feedback.classList.add('text-danger');
         feedback.textContent = i18n.t('feedbackParseErr');
-        renderData(state.data);
         break;
       case 'Network Error':
         feedback.classList.add('text-danger');
         feedback.textContent = i18n.t('feedbackNetworkErr');
-        renderData(state.data);
         break;
-      case 'success':
+      case 'noError':
         feedback.classList.add('text-success');
         feedback.textContent = i18n.t('feedbackSuccess');
         input.value = '';
         input.focus();
-        renderData(state.data);
         break;
       case 'not unique':
         feedback.classList.add('text-danger');
         feedback.textContent = i18n.t('feedbackRssNotUnique');
-        renderData(state.data);
         break;
       case 'failed':
         input.classList.add('is-invalid');
         feedback.classList.add('text-danger');
         feedback.textContent = i18n.t('feedbackDanger');
-        renderData(state.data);
         break;
       default:
         break;
     }
+    renderData();
   };
   render();
 };
