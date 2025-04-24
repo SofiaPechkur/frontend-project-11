@@ -2,7 +2,7 @@ import HtmlWebpackPlugin from 'html-webpack-plugin';
 
 export default {
   entry: './src/index.js',
-  mode: process.env.NODE_ENV || 'development',
+  mode: 'development',
   devServer: {
     hot: true,
   },
