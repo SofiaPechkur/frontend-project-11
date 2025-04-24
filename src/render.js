@@ -107,8 +107,10 @@ export default (state, i18n) => {
   const renderBtn = () => {
     if (state.statusApp === 'request') {
       btnSubmit.disabled = true;
+      input.readonly = true;
     } else {
       btnSubmit.disabled = false;
+      input.readonly = false;
     }
   };
 
@@ -134,7 +136,6 @@ export default (state, i18n) => {
       case 'noError':
         feedback.classList.add('text-success');
         feedback.textContent = i18n.t('feedbackSuccess');
-        input.value = '';
         input.focus();
         break;
       case 'not unique':

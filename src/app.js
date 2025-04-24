@@ -87,6 +87,7 @@ export default (i18n) => {
             }
 
             watchedState.typeError = 'noError';
+            form.reset();
             watchedState.statusApp = 'waiting';
           })
           .catch((error) => {
@@ -99,6 +100,7 @@ export default (i18n) => {
           });
       })
       .catch((error) => {
+        console.log(error);
         if (error.message === 'RSS is not unique') {
           watchedState.typeError = 'not unique';
         } else {
