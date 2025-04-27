@@ -11,6 +11,7 @@ export default (state, i18n) => {
   const footerTextLink = document.querySelector('.text-center a');
   const feeds = document.querySelector('.feeds');
   const posts = document.querySelector('.posts');
+  const form = document.querySelector('form');
 
   const firstRender = () => {
     fullArticle.textContent = i18n.t('fullArticle');
@@ -81,31 +82,25 @@ export default (state, i18n) => {
       renderPosts(state.data.posts);
     }
 
-    const renderModalWindow = (postsArr) => {
-      postsArr.forEach((post) => {
-        if (post.postId === state.uiState.activePost) {
-          document.querySelector('.modal-title').textContent = post.postTitle;
-          document.querySelector('.modal-body').textContent = post.postDescription;
-        }
-      });
-    };
-    renderModalWindow(state.data.posts);
+    state.data.posts.forEach((post) => { // renderModalWindow
+      if (post.postId === state.uiState.activePost) {
+        document.querySelector('.modal-title').textContent = post.postTitle;
+        document.querySelector('.modal-body').textContent = post.postDescription;
+      }
+    });
 
-    const renderOpenPosts = () => {
-      const postsOpenId = state
-        .uiState.posts.filter((post) => post.visibility === 'visited')
-        .map((post) => post.postId);
-      postsOpenId.forEach((id) => {
-        const postTitle = document.querySelector(`a[data-id="${id}"]`);
-        postTitle.classList.remove('fw-bold');
-        postTitle.classList.add('fw-normal', 'link-secondary');
-      });
-    };
-    renderOpenPosts();
+    const postsOpenId = state // renderOpenPosts
+      .uiState.posts.filter((post) => post.visibility === 'visited')
+      .map((post) => post.postId);
+    postsOpenId.forEach((id) => {
+      const postTitle = document.querySelector(`a[data-id="${id}"]`);
+      postTitle.classList.remove('fw-bold');
+      postTitle.classList.add('fw-normal', 'link-secondary');
+    });
   };
 
   const renderBtn = () => {
-    if (state.statusApp === 'request') {
+    if (state.isRequestExecuting === true) {
       btnSubmit.disabled = true;
       input.readonly = true;
     } else {
@@ -124,7 +119,7 @@ export default (state, i18n) => {
     feedback.classList.remove('text-danger');
     feedback.textContent = '';
     renderBtn();
-    switch (state.typeError) {
+    switch (state.statusApp) {
       case 'parseErr':
         feedback.classList.add('text-danger');
         feedback.textContent = i18n.t('feedbackParseErr');
@@ -136,6 +131,7 @@ export default (state, i18n) => {
       case 'noError':
         feedback.classList.add('text-success');
         feedback.textContent = i18n.t('feedbackSuccess');
+        form.reset();
         input.focus();
         break;
       case 'not unique':

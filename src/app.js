@@ -4,18 +4,18 @@ import _ from 'lodash';
 import onChange from 'on-change';
 import * as yup from 'yup';
 import render from './render.js';
-import parse from './parse.js';
+import getData from './getData.js';
 
 export default (i18n) => {
   const input = document.querySelector('#url-input');
   const posts = document.querySelector('.posts');
 
   const state = {
-    urls: [], // https://lorem-rss.hexlet.app/feed?unit=second, https://lorem-rss.hexlet.app/feed?unit=second&interval=30, https://lorem-rss.hexlet.app/feed?unit=day
-    statusApp: 'waiting', // 'waiting' or 'request'
-    typeError: null,
+    isRequestExecuting: false,
+    statusApp: 'waiting',
     data: {
-      // {title: title, description: description}
+      // {title: title, description: description, url: url}
+      // https://lorem-rss.hexlet.app/feed?unit=second, https://lorem-rss.hexlet.app/feed?unit=second&interval=30, https://lorem-rss.hexlet.app/feed?unit=day
       feeds: [],
       // {postId: 1, postTitle: title, postDescription: description, postLink: link},
       // {postId: 2, postTitle: title, postDescription: description, postLink: link},
@@ -30,83 +30,87 @@ export default (i18n) => {
   };
 
   const schema = yup.object().shape({
-    url: yup.string().url().required().test('unique', 'RSS is not unique', (data) => !state.urls.includes(data)),
+    url: yup.string().url().required().test('unique', 'RSS is not unique', (data) => !state.data.feeds.map((feed) => feed.url).includes(data)),
   });
 
   const watchedState = onChange(state, () => render(state, i18n));
 
-  const setState = (data) => {
-    const { title, description, postsData } = data;
-    const feedsTitles = state.data.feeds.map((feed) => feed.title);
-    if (!feedsTitles.includes(title)) {
-      watchedState.data.feeds.push({ title, description });
-    }
-    const postsTitles = state.data.posts.map((post) => post.postTitle);
-    postsData.reverse().forEach((item) => {
-      if (!postsTitles.includes(item[0])) {
-        const id = _.uniqueId();
-        watchedState.data.posts.unshift({
-          postId: id,
-          postTitle: item[0],
-          postDescription: item[1],
-          postLink: item[2],
-        });
-        watchedState.uiState.posts.unshift({
-          postId: id,
-          visibility: 'new',
-        });
-      }
+  const setFeed = (data) => {
+    const { title, description, url } = data;
+    watchedState.data.feeds.push({ title, description, url });
+  };
+
+  const setPosts = (data) => {
+    const { postsData } = data;
+    const postsTitlesInState = state.data.posts.map((post) => post.postTitle);
+    const postsTitlesIncome = postsData.reverse().map((post) => post.titleText);
+    const postsTitlesAll = new Set([...postsTitlesInState, ...postsTitlesIncome]);
+    const postsTitlesNew = Array.from(postsTitlesAll)
+      .filter((title) => !postsTitlesInState
+        .includes(title));
+    const postsNew = postsData.filter((post) => postsTitlesNew.includes(post.titleText));
+    postsNew.forEach((post) => {
+      const id = _.uniqueId();
+      watchedState.data.posts.unshift({
+        postId: id,
+        postTitle: post.titleText,
+        postDescription: post.descriptionText,
+        postLink: post.linkText,
+      });
+      watchedState.uiState.posts.unshift({
+        postId: id,
+        visibility: 'new',
+      });
     });
   };
 
   const updateRSS = () => {
-    state.urls.forEach((urlForUpdate) => {
-      parse(urlForUpdate)
-        .then((data) => {
-          setState(data);
-          setTimeout(updateRSS, 5000);
-        })
-        .catch(() => {});
-    });
+    const feedUrls = state.data.feeds.map((feed) => feed.url);
+    const promises = feedUrls.map((urlForUpdate) => getData(urlForUpdate)
+      .then((data) => {
+        setPosts(data);
+      })
+      .catch(() => {}));
+    Promise.all(promises)
+      .then(() => {
+        setTimeout(updateRSS, 5000);
+      })
+      .catch(() => {});
   };
 
   const form = document.querySelector('form');
   form.addEventListener('submit', (event) => {
     event.preventDefault();
-    watchedState.statusApp = 'request';
+    watchedState.isRequestExecuting = true;
     const url = input.value;
     schema.validate({ url })
       .then(() => {
-        parse(url)
+        getData(url)
           .then((data) => {
-            setState(data);
+            setFeed(data);
+            setPosts(data);
 
-            watchedState.urls.push(url);
-            if (state.urls.length === 1) {
-              updateRSS();
-            }
-
-            watchedState.typeError = 'noError';
-            form.reset();
+            watchedState.statusApp = 'noError';
             watchedState.statusApp = 'waiting';
+            watchedState.isRequestExecuting = false;
           })
           .catch((error) => {
             if (error.message === 'Network Error') {
-              watchedState.typeError = 'Network Error';
+              watchedState.statusApp = 'Network Error';
             } else {
-              watchedState.typeError = 'parseErr';
+              watchedState.statusApp = 'parseErr';
             }
-            watchedState.statusApp = 'waiting';
+            watchedState.isRequestExecuting = false;
           });
       })
       .catch((error) => {
         console.log(error);
         if (error.message === 'RSS is not unique') {
-          watchedState.typeError = 'not unique';
+          watchedState.statusApp = 'not unique';
         } else {
-          watchedState.typeError = 'failed';
+          watchedState.statusApp = 'failed';
         }
-        watchedState.statusApp = 'waiting';
+        watchedState.isRequestExecuting = false;
       });
   });
 
@@ -120,4 +124,5 @@ export default (i18n) => {
   });
 
   render(state, i18n);
+  updateRSS();
 };
