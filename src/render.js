@@ -1,4 +1,4 @@
-export default (state, i18n) => {
+export default (state, i18n, path) => {
   const input = document.querySelector('#url-input');
   const feedback = document.querySelector('.feedback');
   const fullArticle = document.querySelector('.full-article');
@@ -114,39 +114,41 @@ export default (state, i18n) => {
     posts.innerHTML = '';
     document.querySelector('.modal-title').textContent = '';
     document.querySelector('.modal-body').textContent = '';
-    input.classList.remove('is-invalid');
-    feedback.classList.remove('text-success');
-    feedback.classList.remove('text-danger');
-    feedback.textContent = '';
     renderBtn();
-    switch (state.statusApp) {
-      case 'parseErr':
-        feedback.classList.add('text-danger');
-        feedback.textContent = i18n.t('feedbackParseErr');
-        break;
-      case 'Network Error':
-        feedback.classList.add('text-danger');
-        feedback.textContent = i18n.t('feedbackNetworkErr');
-        break;
-      case 'noError':
-        feedback.classList.add('text-success');
-        feedback.textContent = i18n.t('feedbackSuccess');
-        form.reset();
-        input.focus();
-        break;
-      case 'not unique':
-        feedback.classList.add('text-danger');
-        feedback.textContent = i18n.t('feedbackRssNotUnique');
-        break;
-      case 'failed':
-        input.classList.add('is-invalid');
-        feedback.classList.add('text-danger');
-        feedback.textContent = i18n.t('feedbackDanger');
-        break;
-      default:
-        break;
-    }
     renderData();
+    if (path === 'statusApp') {
+      input.classList.remove('is-invalid');
+      feedback.classList.remove('text-success');
+      feedback.classList.remove('text-danger');
+      feedback.textContent = '';
+      switch (state.statusApp) {
+        case 'parseErr':
+          feedback.classList.add('text-danger');
+          feedback.textContent = i18n.t('feedbackParseErr');
+          break;
+        case 'Network Error':
+          feedback.classList.add('text-danger');
+          feedback.textContent = i18n.t('feedbackNetworkErr');
+          break;
+        case 'noError':
+          feedback.classList.add('text-success');
+          feedback.textContent = i18n.t('feedbackSuccess');
+          form.reset();
+          input.focus();
+          break;
+        case 'not unique':
+          feedback.classList.add('text-danger');
+          feedback.textContent = i18n.t('feedbackRssNotUnique');
+          break;
+        case 'failed':
+          input.classList.add('is-invalid');
+          feedback.classList.add('text-danger');
+          feedback.textContent = i18n.t('feedbackDanger');
+          break;
+        default:
+          break;
+      }
+    }
   };
   render();
 };

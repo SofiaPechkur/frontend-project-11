@@ -33,7 +33,7 @@ export default (i18n) => {
     url: yup.string().url().required().test('unique', 'RSS is not unique', (data) => !state.data.feeds.map((feed) => feed.url).includes(data)),
   });
 
-  const watchedState = onChange(state, () => render(state, i18n));
+  const watchedState = onChange(state, (path) => render(state, i18n, path));
 
   const setFeed = (data) => {
     const { title, description, url } = data;
@@ -91,7 +91,6 @@ export default (i18n) => {
             setPosts(data);
 
             watchedState.statusApp = 'noError';
-            watchedState.statusApp = 'waiting';
             watchedState.isRequestExecuting = false;
           })
           .catch((error) => {
