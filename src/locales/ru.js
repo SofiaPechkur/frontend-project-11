@@ -23,4 +23,4 @@ export default {
     footer: 'created by',
     footerTextLink: 'Hexlet',
   },
-};
+}

@@ -1,6 +1,6 @@
-import i18n from 'i18next';
-import resources from './locales/index.js';
-import runApp from './app.js';
+import i18n from 'i18next'
+import resources from './locales/index.js'
+import runApp from './app.js'
 
 export default () => {
   i18n.init({
@@ -8,5 +8,5 @@ export default () => {
     resources,
   })
     .then(() => runApp(i18n))
-    .catch(() => {});
-};
+    .catch(() => {})
+}

@@ -16,4 +16,4 @@ export default {
     footer: '',
     footerLink: '',
   },
-};
+}
